@@ -184,11 +184,24 @@ async def get_campus_updates(category:Literal['notice-board','recent-news',"upco
     except Exception as e:
         return "Error while getting notice board,Try again later"
 @tool
-async def get_department_schedule(dept:Literal[
+async def get_department_schedules(department:Literal[
+    "civil",
+    "chemical",
+    "csit",
+    "cse-ds",
     "computer-science",
-    "",
-])
-
+    "cse-aiml",
+    "cse-iot-csitcs",
+    "electronics-communication",
+    "elect-elex",
+    "fire-tech",
+    "mechanical",
+    "general-eng",]):
+    """Tool to get department related exam schedules , news etc."""
+    url="https://ies.ipsacademy.org/category/"
+    match department:
+        case "chemical":
+            url+="chemical"
 tools = [
     get_attendence,
     get_syllabus,
