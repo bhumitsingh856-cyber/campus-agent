@@ -45,17 +45,17 @@ graph.add_edge("chat", END)
 
 wf = graph.compile(checkpointer=checkpoint)
 
-async def main():
-    while True:
-        a = input("User - ")
-        if a == "`":
-            break
-        async for i, j in wf.astream(
-            {"messages": [HumanMessage(content=a)]},
-            config={"configurable": {"thread_id": 0.11}},
-            stream_mode="messages",
-        ):
-            if isinstance(i, AIMessage):
-                print(i.content, end="", flush=True)
-        print("\n...............................................................................")
-asyncio.run(main())
+# async def main():
+#     while True:
+#         a = input("User - ")
+#         if a == "`":
+#             break
+#         async for i, j in wf.astream(
+#             {"messages": [HumanMessage(content=a)]},
+#             config={"configurable": {"thread_id": 0.11}},
+#             stream_mode="messages",
+#         ):
+#             if isinstance(i, AIMessage):
+#                 print(i.content, end="", flush=True)
+#         print("\n...............................................................................")
+# asyncio.run(main())
