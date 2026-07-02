@@ -9,23 +9,32 @@ from src.agent.llm import llm
 from src.agent.tools.tools import tools
 from langgraph.prebuilt import tools_condition
 from langchain_core.messages.utils import trim_messages, count_tokens_approximately
+from src.utils.register_user import store
+from langchain_core.runnables import RunnableConfig
+from langgraph.store.base import BaseStore
 import asyncio
 
 
 class GlobalState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
 
+async def chat(state: GlobalState , config:RunnableConfig , store:BaseStore):
+    thread_id=config['configurable']['thread_id']
+    namespace=('student',str(thread_id))
+    student=store.get(namespace,"profile")
 
-async def chat(state: GlobalState):
-    
+    # Trimming messages to manage context window 
     msg=trim_messages(
         messages=state['messages'],
         token_counter=count_tokens_approximately,
         max_tokens=7000,
         strategy="last"
     )
+    prompt=SYSTEM_PROMPT
+    if student:
+        prompt+=f"\nStudent Details : {student.value}"
     res =await llm.bind_tools(tools).ainvoke(
-        [SystemMessage(content=SYSTEM_PROMPT), *msg]
+        [SystemMessage(content=prompt), *msg]
     )
     return {"messages": [res]}
 
@@ -43,7 +52,7 @@ graph.add_edge("tools", "chat")
 graph.add_edge(START, "chat")
 graph.add_edge("chat", END)
 
-wf = graph.compile(checkpointer=checkpoint)
+wf = graph.compile(checkpointer=checkpoint,store=store)
 
 # async def main():
 #     while True:

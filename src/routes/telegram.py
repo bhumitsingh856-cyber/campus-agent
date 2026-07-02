@@ -5,7 +5,8 @@ from telegram.constants import ParseMode
 from telegram.constants import ChatAction
 from langchain_core.messages import HumanMessage
 from src.agent.workflow import wf
-from src.utils.clear_history import clear_history
+from src.utils.command_handler import process_command
+from src.utils.start_message import start_message
 import os
 
 TOKEN = os.getenv("TELEGRAM_ACCESS_TOKEN")
@@ -19,45 +20,25 @@ async def telegram_webhook(request: Request):
     """Receive messages from Telegram"""
     data = await request.json()
     update = Update.de_json(data, telegram_app.bot)
+
+    if update.message is None or update.message.text is None:
+        return {"status": "ok"}
     user_query: str = update.message.text
     user_id = update.effective_user.id
 
-    if user_query.lower().strip() == "/clear":
-        clear = clear_history(str(user_id))
+    command_result = process_command(user_query, user_id)
+    if command_result["handled"]:
         await telegram_app.bot.send_message(
             chat_id=user_id,
-            text=clear["message"],
+            text=command_result["message"],
             parse_mode=ParseMode.MARKDOWN,
         )
         return {"status": "ok"}
 
-    if user_query.lower().strip() == "/start":
-        start_message = (
-            "Welcome to the *IPS Campus Assistant*! 🤖\n\n"
-            "I can help you with:\n"
-            "• *Syllabus & study schemes*\n"
-            "• *Portal Attendance* (needs computer code & password)\n"
-            "• *Campus Updates & Placements*\n"
-            "• *Academic Calendar & Schedules*\n"
-            "• *Rules, Conduct & Brochure*\n"
-            "• *Admission Procedure*\n\n"
-            "*Commands:*\n"
-            "• `/start` - Show this message\n"
-            "• `/clear` - Clear conversation history\n\n"
-            "What would you like to know? 😊"
-        )
-        await telegram_app.bot.send_message(
-            chat_id=user_id,
-            text=start_message,
-            parse_mode=ParseMode.MARKDOWN,
-        )
-        return {"status": "ok"}
-
-    print("User- ", user_query)
     try:
+        
         await telegram_app.bot.send_chat_action(
-            chat_id=user_id,
-            action=ChatAction.TYPING
+            chat_id=user_id, action=ChatAction.TYPING
         )
         result = await wf.ainvoke(
             {"messages": [HumanMessage(content=user_query)]},
@@ -67,6 +48,7 @@ async def telegram_webhook(request: Request):
         await telegram_app.bot.send_message(
             chat_id=user_id,
             text=result["messages"][-1].content,
+            # text="LLM",
             parse_mode=ParseMode.MARKDOWN,
         )
     except Exception as e:

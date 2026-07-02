@@ -3,12 +3,15 @@ from firecrawl import Firecrawl
 from dotenv import load_dotenv
 from src.db.vector import retriever
 from langchain_tavily import TavilySearch, TavilyExtract
+from langchain_core.output_parsers import JsonOutputParser
 from typing import Literal
 
 load_dotenv()
+
 app = Firecrawl()
 tavily = TavilySearch()
 tavily_extract = TavilyExtract(extract_depth="basic", format="markdown")
+parser = JsonOutputParser()
 
 
 @tool
@@ -20,8 +23,8 @@ async def get_attendence(computer_code: str, password: str):
     both credentials.
 
     Args:
-        computer_code: The student's unique computer code / registration ID.
-        password: The student's portal password.
+        computer_code: The student's unique 5 digit computer code .
+        password: The student's portal password / or DOB if available , formate: DD-MM-YYYY.
 
     Returns:
         A markdown-formatted string with attendance details or an error message.
@@ -31,12 +34,22 @@ async def get_attendence(computer_code: str, password: str):
         result = app.scrape(
             "https://cms2.ipsacademy.net/Login/sign_in", formats=["markdown"]
         )
+
         scrape_id = result.metadata.scrape_id
-        app.interact(
+        sign_in = app.interact(
             scrape_id,
-            prompt=f"login using computer code - {computer_code} , pass- {password}",
+            prompt=f'SignIn using computer code: {computer_code} , password: {password} ,  return in JSON: {{"success":boolean,"message":"string"}}',
         )
+
+        res = parser.parse(sign_in.output)
+        print(res)
+        if res and (not res.get("success")):
+            app.stop_interaction(scrape_id)
+            return res.get("details")
+
         response = app.interact(scrape_id, prompt="return the attendence")
+        print(response.output)
+        app.stop_interaction(scrape_id)
         return response.output
     except Exception as e:
         print(e)
@@ -238,9 +251,9 @@ async def scrape_url(url: str):
 
     WARNING: Only use this tool when you have a specific, absolute URL to fetch. Do not guess
     or invent URLs. Use it to read page content or PDF instructions when given a valid URL.
-    -DO NOT pass any image url like jpeg , png etc
 
     Args:
+        STRICTLY NOT ALLOWED - url with jpeg/png or any image formate.
         url: The absolute HTTP/HTTPS URL of the webpage or PDF document to scrape.
 
     Returns:
@@ -256,11 +269,10 @@ async def scrape_url(url: str):
 
 
 @tool
-async def academic_calander():
-    """Retrieves the academic calendar, including term start/end dates, holidays, and exam schedules.
+async def examination_schedules():
+    """Retrieves the and exam schedules like mid/end sem.
 
-    Use this tool when users ask about semester dates, holidays, academic schedules,
-    exam calendars, or term timelines.
+    Use this tool when users ask about semester dates, academic schedules.
 
     Returns:
         Academic calendar details or an error message.
@@ -373,11 +385,80 @@ async def get_department_schedules(
         return "Error while getting department informatioans ,Try again later"
 
 
+@tool
+async def scholarship_notices():
+    """Fetch latest scholarship notices from IPS Academy official website.
+
+    Returns:
+      Raw content from the scholarship notices page, or error message if unavailable."""
+    try:
+        result = await tavily_extract.ainvoke(
+            {"urls": ["https://ies.ipsacademy.org/scholarship-notices"]}
+        )
+        return result["results"][0]
+    except Exception as e:
+        return "Error while getting scholarship notices ,Try again later"
+
+
+@tool
+async def campus_facilities():
+    """Fetch information about IPS Academy campus facilities and infrastructure.
+    Returns:
+       Facility details from the official website, or error message if unavailable.
+    """
+    try:
+        result = await tavily_extract.ainvoke(
+            {"urls": ["https://ies.ipsacademy.org/facilities/"]}
+        )
+        return result["results"][0]
+    except Exception as e:
+        return "Error while getting scholarship notices ,Try again later"
+
+
+@tool
+def academic_calender():
+    """Retrieve the latest Academic calender for Btech/Mtech."""
+    return "https://ies.ipsacademy.org/wp-content/uploads/2016/12/Academic-Calendar-AY-2026-27-B.Tech-M.Tech-IIyr-Onwards.pdf"
+
+
+
+def get_student_details(computer_code: str, password: str):
+    """Tool to register the student and get student details"""
+    try:
+        print("start")
+        result = app.scrape(
+            "https://cms2.ipsacademy.net/Login/sign_in", formats=["markdown"]
+        )
+
+        scrape_id = result.metadata.scrape_id
+        sign_in = app.interact(
+            scrape_id,
+            prompt=f'SignIn using computer code: {computer_code} , password: {password} ,  return in JSON: {{"success":boolean,"message":"string"}}',
+        )
+
+        res = parser.parse(sign_in.output)
+        if res and (not res.get("success")):
+            app.stop_interaction(scrape_id)
+            return res
+
+        response = app.interact(
+            scrape_id,
+            prompt="From top right corner , select my profile , return all the primary information + Branch , semester , enroll no. , return a valid JSON only {'success':boolean,'message':{'key':'value'}}",
+        )
+        app.stop_interaction(scrape_id)
+        return parser.parse(response.output)
+    except Exception as e:
+        print(e)
+        return {
+            "success": False,
+            "message": "Unable to fetch the student details at the moment.",
+        }
+
 tools = [
     get_attendence,
     get_syllabus,
     scrape_url,
-    academic_calander,
+    examination_schedules,
     academic_programs,
     admission_procedure,
     institute_brochure,
@@ -386,4 +467,7 @@ tools = [
     get_department_schedules,
     get_campus_updates,
     placements,
+    scholarship_notices,
+    campus_facilities,
+    academic_calender,
 ]

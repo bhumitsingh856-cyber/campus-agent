@@ -6,14 +6,14 @@ from langchain_cerebras import ChatCerebras
 
 load_dotenv()
 
-llm = ChatCerebras(
-    model="gpt-oss-120b",
-    max_retries=2,
-)
-
 # llm = ChatCerebras(
-#     model="zai-glm-4.7",
+#     model="gpt-oss-120b",
+#     max_retries=2,
 # )
+
+llm = ChatCerebras(
+    model="zai-glm-4.7",
+)
 
 # llm = ChatGroq(model="openai/gpt-oss-120b")
 
