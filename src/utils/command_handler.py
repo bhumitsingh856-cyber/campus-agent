@@ -3,7 +3,7 @@ from src.utils.register_user import get_student, register, unregister
 from src.utils.start_message import commands, start_message
 
 
-def process_command(user_query: str, chat_id: str) -> dict:
+async def process_command(user_query: str, chat_id: str) -> dict:
     query = user_query.strip()
     lower = query.lower()
 
@@ -14,7 +14,7 @@ def process_command(user_query: str, chat_id: str) -> dict:
                 "handled": True,
                 "message": "*Usage: /register <Computer-code> <Password>*",
             }
-        res = register(parts[1], parts[2], str(chat_id))
+        res =await register(parts[1], parts[2], str(chat_id))
         return {"handled": True, "message": res["message"]}
 
     if lower == "/help":
@@ -24,11 +24,11 @@ def process_command(user_query: str, chat_id: str) -> dict:
         return {"handled": True, "message": start_message}
 
     if lower == "/clear":
-        clear = clear_history(str(chat_id))
+        clear =await clear_history(str(chat_id))
         return {"handled": True, "message": clear["message"]}
 
     if lower == "/profile":
-        res = get_student(str(chat_id))
+        res =await get_student(str(chat_id))
         profile = ""
         if res.get("data"):
             data = res["data"]
@@ -49,7 +49,7 @@ def process_command(user_query: str, chat_id: str) -> dict:
         return {"handled": True, "message": profile or res.get("message", "No profile available.")}
 
     if lower.startswith("/unregister"):
-        res = unregister(str(chat_id))
+        res =await unregister(str(chat_id))
         return {"handled": True, "message": res["message"]}
 
     if query.startswith("/"):

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.agent.workflow import wf
+import src.agent.workflow as workflow
 from src.utils.command_handler import process_command
 from langchain_core.messages import HumanMessage
 
@@ -8,16 +8,16 @@ bot_router = APIRouter()
 
 @bot_router.post("/bot")
 async def bot(req: str, thread_id: str):
-    command_result = process_command(req, thread_id)
+    command_result =await process_command(req, thread_id)
     if command_result["handled"]:
         return command_result["message"]
 
     try:
-        res = await wf.ainvoke(
+        res = await workflow.get_workflow().ainvoke(
             {"messages": [HumanMessage(content=req)]},
             config={"configurable": {"thread_id": thread_id}},
         )
         return res["messages"][-1].content
     except Exception as e:
-        print(e)
-        return "*Something went Wrong, Please try again later*"
+        print(f"Error in /bot endpoint: {e}")
+        return "*I encountered an issue processing your request.*\n\nPlease try again or visit : [IPS Academy IES ](https://ies.ipsacademy.org/) for information."

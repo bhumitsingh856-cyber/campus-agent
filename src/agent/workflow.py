@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict, Annotated
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
-from langgraph.checkpoint.memory import MemorySaver
+
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from src.agent.prompt.sys import SYSTEM_PROMPT
@@ -9,11 +9,12 @@ from src.agent.llm import llm
 from src.agent.tools.tools import tools
 from langgraph.prebuilt import tools_condition
 from langchain_core.messages.utils import trim_messages, count_tokens_approximately
-from src.utils.register_user import store
+
+import src.db.checkpointer as db
+
 from langchain_core.runnables import RunnableConfig
 from langgraph.store.base import BaseStore
 import asyncio
-
 
 class GlobalState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
@@ -21,7 +22,7 @@ class GlobalState(TypedDict):
 async def chat(state: GlobalState , config:RunnableConfig , store:BaseStore):
     thread_id=config['configurable']['thread_id']
     namespace=('student',str(thread_id))
-    student=store.get(namespace,"profile")
+    student=await db.store.aget(namespace,"profile")
 
     # Trimming messages to manage context window 
     msg=trim_messages(
@@ -40,7 +41,6 @@ async def chat(state: GlobalState , config:RunnableConfig , store:BaseStore):
 
 toolnode = ToolNode(tools)
 
-checkpoint = MemorySaver()
 
 graph = StateGraph(GlobalState)
 
@@ -52,19 +52,14 @@ graph.add_edge("tools", "chat")
 graph.add_edge(START, "chat")
 graph.add_edge("chat", END)
 
-wf = graph.compile(checkpointer=checkpoint,store=store)
+wf = None
 
-# async def main():
-#     while True:
-#         a = input("User - ")
-#         if a == "`":
-#             break
-#         async for i, j in wf.astream(
-#             {"messages": [HumanMessage(content=a)]},
-#             config={"configurable": {"thread_id": 0.11}},
-#             stream_mode="messages",
-#         ):
-#             if isinstance(i, AIMessage):
-#                 print(i.content, end="", flush=True)
-#         print("\n...............................................................................")
-# asyncio.run(main())
+def get_workflow():
+    global wf
+    if wf is None:
+        if db.checkpointer is None or db.store is None:
+            raise RuntimeError(
+                "Database must be initialized before compiling the workflow."
+            )
+        wf = graph.compile(checkpointer=db.checkpointer, store=db.store)
+    return wf

@@ -1,11 +1,10 @@
-from langgraph.store.memory import InMemoryStore
 from src.agent.tools.tools import get_student_details
+import src.db.checkpointer as db
 
-store = InMemoryStore()
-
-def register(computer_code: str, password: str, chat_id: str):
+async def register(computer_code: str, password: str, chat_id: str):
     namespace = ("student", chat_id)
-    student = store.get(namespace, "profile")
+    print("-------------------",db.store)
+    student = await db.store.aget(namespace, "profile")
     if student:
         return {"success": True, "message": "*Computer code is already registered ❗*"}
 
@@ -33,7 +32,7 @@ def register(computer_code: str, password: str, chat_id: str):
     if not data["success"]:
         return data
     try:
-        store.put(namespace, "profile", data["message"])
+        await db.store.aput(namespace, "profile", data["message"])
         return {"success": True, "message": "*Student registered successfully ✔️*"}
     except Exception as e:
         return {
@@ -42,15 +41,15 @@ def register(computer_code: str, password: str, chat_id: str):
         }
 
 
-def unregister(chat_id: str):
+async def unregister(chat_id: str):
     namespace = ("student", chat_id)
     try:
-        if not store.get(namespace, "profile"):
+        if not await db.store.aget(namespace, "profile"):
             return {
                 "success": True,
                 "message": "*No Computer Code found to unregister, please register first ❗*",
             }
-        store.delete(namespace, "profile")
+        await db.store.adelete(namespace, "profile")
         return {"success": True, "message": "*Unregistered successfully ✔️*"}
     except Exception as e:
         return {
@@ -59,10 +58,10 @@ def unregister(chat_id: str):
         }
 
 
-def get_student(chat_id: str):
+async def get_student(chat_id: str):
     namespace = ("student", chat_id)
     try:
-        student = store.get(namespace, "profile")
+        student = await db.store.aget(namespace, "profile")
         if student:
             return {"data": student.value}
         else:

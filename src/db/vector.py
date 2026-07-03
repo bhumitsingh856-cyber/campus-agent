@@ -1,3 +1,4 @@
+import os
 import dotenv
 import hashlib
 from pinecone import Pinecone
@@ -12,7 +13,7 @@ dotenv.load_dotenv()
 llm = embedding_model = NVIDIAEmbeddings(model="nvidia/nv-embed-v1")
 
 pc = Pinecone()
-index = pc.Index("campus")
+index = pc.Index(os.getenv("PINECONE_INDEX_NAME"))
 
 
 def store(namespace: str):
