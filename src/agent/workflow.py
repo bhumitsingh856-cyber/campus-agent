@@ -22,22 +22,32 @@ class GlobalState(TypedDict):
 async def chat(state: GlobalState , config:RunnableConfig , store:BaseStore):
     thread_id=config['configurable']['thread_id']
     namespace=('student',str(thread_id))
-    student=await db.store.aget(namespace,"profile")
-
+    student=None
+    try:
+        student=await db.store.aget(namespace,"profile")
+    except Exception as e:
+        student=None
+        
     # Trimming messages to manage context window 
     msg=trim_messages(
         messages=state['messages'],
         token_counter=count_tokens_approximately,
         max_tokens=7000,
-        strategy="last"
+        strategy="last",
+        allow_partial=False,
+        start_on=HumanMessage
     )
     prompt=SYSTEM_PROMPT
     if student:
         prompt+=f"\nStudent Details : {student.value}"
-    res =await llm.bind_tools(tools).ainvoke(
-        [SystemMessage(content=prompt), *msg]
-    )
-    return {"messages": [res]}
+    try:
+        
+        res =await llm.bind_tools(tools).ainvoke(
+            [SystemMessage(content=prompt), *msg]
+        )
+        return {"messages": [res]}
+    except Exception as e:
+        return {"messages": [AIMessage(content="*Assistant* encountered an issue processing your request.*\n\nPlease try again or visit : [IPS Academy IES ](https://ies.ipsacademy.org/) for information.")]}
 
 toolnode = ToolNode(tools)
 

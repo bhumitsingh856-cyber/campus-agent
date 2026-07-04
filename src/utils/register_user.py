@@ -3,32 +3,12 @@ import src.db.checkpointer as db
 
 async def register(computer_code: str, password: str, chat_id: str):
     namespace = ("student", chat_id)
-    print("-------------------",db.store)
     student = await db.store.aget(namespace, "profile")
     if student:
         return {"success": True, "message": "*Computer code is already registered ❗*"}
 
-    # data = get_student_details(computer_code, password)
-    data = {
-        "success": True,
-        "message": {
-            "Name": "BHUMIT SINGH",
-            "Course": "B.Tech.",
-            "Year": "2",
-            "Academic Session": "2025-2026(Jan-June)",
-            "Category": "SC",
-            "Computer Code": "70010",
-            "Gender": "M",
-            "Blood Group": "A+",
-            "Date of Birth": "18-03-2007",
-            "Date Of Admission": "2024-12-20",
-            "Mobile No.": "9826972085",
-            "Email": "Sbhumit828@gmail.com",
-            "Branch": "AIML",
-            "Semester": "4",
-            "Enrollment No.": "0808CL241048",
-        },
-    }
+    data = get_student_details(computer_code, password)
+
     if not data["success"]:
         return data
     try:
