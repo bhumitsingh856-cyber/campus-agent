@@ -122,7 +122,7 @@ async def institute_brochure(query: str):
     """Queries the local vector database of the institute brochure.
 
     The brochure contains official, detailed information about the institute's profile,
-    infrastructure, facilities, courses offered, faculty information, and general overview.
+    infrastructure, facilities, courses offered, and general overview.
     Use this tool for queries seeking general information about the college facilities, history,
     or campus environment.
 
@@ -249,7 +249,7 @@ async def academic_programs(course: Literal["BE/BTech", "ME/MTech"]):
 async def scrape_url(url: str):
     """Scrapes content from a specific webpage or PDF URL.
 
-    WARNING: Only use this tool when you have a specific, absolute URL to fetch. Do not guess
+    WARNING: Only use this tool when user *EXPLICITLY* asked for specific URL details to fetch (do not use this tool by yourself) . Do not guess
     or invent URLs. Use it to read page content or PDF instructions when given a valid URL.
 
     Args:
@@ -270,21 +270,21 @@ async def scrape_url(url: str):
 
 @tool
 async def examination_schedules():
-    """Retrieves the and exam schedules like mid/end sem.
+    """Retrieves the examination schedules like mid/end sem.
 
-    Use this tool when users ask about semester dates, academic schedules.
+    Use this tool when users ask about semester dates, exam schedules.
 
     Returns:
-        Academic calendar details or an error message.
+        Examination details link or an error message.
     """
-    print("Calling academic_calander")
+    print("Calling examination_schedules")
     try:
         result = await tavily_extract.ainvoke(
             {"urls": ["https://ies.ipsacademy.org/academics/academic-calendar"]}
         )
         return result["results"][0]
     except Exception as e:
-        return "Error while getting academic calander,Try again later"
+        return "Error while getting examination schedules,Try again later"
 
 
 @tool
@@ -339,9 +339,9 @@ async def get_department_schedules(
         "general-eng",
     ],
 ):
-    """Retrieves department-specific updates, exam schedules, timetables, and news.
+    """Retrieves department-specific updates, re-exam schedules, and news.
 
-    Use this tool when the query asks about schedules, timetables, exams, or news
+    Use this tool when the query asks about , re-exams schedules, or news
     specific to a particular department (e.g., Civil, Chemical, Computer Science, etc.).
 
     Args:
@@ -451,7 +451,7 @@ def get_student_details(computer_code: str, password: str):
         print(e)
         return {
             "success": False,
-            "message": "Unable to fetch the student details at the moment.",
+            "message": "Unable to fetch the student details at the moment. Please try again.",
         }
 
 tools = [
