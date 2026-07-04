@@ -12,6 +12,7 @@ langchain_text_splitters
 langchain-cerebras
 langchain_pinecone
 langgraph-checkpoint-postgres
+langchain_nvidia_ai_endpoints
 langsmith
 firecrawl 
 pydantic
