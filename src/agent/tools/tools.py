@@ -56,7 +56,6 @@ async def get_attendence(computer_code: str, password: str):
             app.stop_interaction(scrape_id) 
         return "Error while getting attendence,Try again later"
 
-
 @tool
 async def get_syllabus(
     course: Literal[
@@ -246,27 +245,46 @@ async def academic_programs(course: Literal["BE/BTech", "ME/MTech"]):
         return "Error while getting academic programs,Try again later"
 
 
-@tool
-async def scrape_url(url: str):
-    """Scrapes content from a specific webpage or PDF URL.
-
-    WARNING: Only use this tool when user *EXPLICITLY* asked for specific URL details to fetch (do not use this tool by yourself) . Do not guess
-    or invent URLs. Use it to read page content or PDF instructions when given a valid URL.
-
-    Args:
-        STRICTLY NOT ALLOWED - url with jpeg/png or any image formate.
-        url: The absolute HTTP/HTTPS URL of the webpage or PDF document to scrape.
-
-    Returns:
-        The markdown representation of the webpage/PDF content or an error message.
-    """
-    print(f"Calling scrape_url for url: {url}")
+async def _scrape_content(url: str, content_type: str):
     try:
         doc = app.scrape(url, formats=["markdown"])
         return doc.markdown
     except Exception as e:
         print(e)
+        if content_type == "pdf":
+            return "Error while parsing the pdf,Try again later"
         return "Error while scraping the url,Try again later"
+
+
+@tool
+async def scrape_url(url: str):
+    """Scrapes content from a specific webpage URL.
+
+    Args:
+        url: The absolute HTTP/HTTPS URL of the webpage to scrape.
+
+    Returns:
+        The markdown representation of the webpage content or an error message.
+    """
+    print(f"Calling scrape_url for url: {url}")
+    return await _scrape_content(url, "webpage")
+
+
+@tool
+async def parse_pdf(url: str):
+    """Parses content from a specific PDF URL.
+
+    WARNING: Only use this tool when the user *EXPLICITLY* asked to read or extract details from a PDF file URL.
+    Do not guess or invent URLs. Do not use this tool for regular webpage URLs or images.
+
+    Args:
+        url: The absolute HTTP/HTTPS URL of the PDF document to parse.
+
+    Returns:
+        The parsed markdown content from the PDF or an error message.
+    """
+    print(f"Calling parse_pdf for url: {url}")
+    return await _scrape_content(url, "pdf")
 
 
 @tool
@@ -459,6 +477,7 @@ tools = [
     get_attendence,
     get_syllabus,
     scrape_url,
+    parse_pdf,
     examination_schedules,
     academic_programs,
     admission_procedure,
