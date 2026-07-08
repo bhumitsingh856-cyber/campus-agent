@@ -2,12 +2,16 @@ from fastapi import APIRouter
 import src.agent.workflow as workflow
 from src.utils.command_handler import process_command
 from langchain_core.messages import HumanMessage
+from fastapi import Request
 
 bot_router = APIRouter()
 
 
 @bot_router.post("/bot")
-async def bot(req: str, thread_id: str):
+async def bot(fetch_request: Request):
+    data=await fetch_request.json()
+    req=data.get("query")
+    thread_id=data.get("thread_id")
     command_result =await process_command(req, thread_id)
     if command_result["handled"]:
         return command_result["message"]
