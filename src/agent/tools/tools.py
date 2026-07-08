@@ -45,14 +45,15 @@ async def get_attendence(computer_code: str, password: str):
         print(res)
         if res and (not res.get("success")):
             app.stop_interaction(scrape_id)
-            return res.get("details")
-
+            return res.get("message")
+        
         response = app.interact(scrape_id, prompt="return the attendence")
-        print(response.output)
-        app.stop_interaction(scrape_id)
+        app.stop_interaction(scrape_id) 
         return response.output
     except Exception as e:
         print(e)
+        if scrape_id:
+            app.stop_interaction(scrape_id) 
         return "Error while getting attendence,Try again later"
 
 

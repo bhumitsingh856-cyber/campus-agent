@@ -2,7 +2,6 @@ import src.db.checkpointer as db
 async def clear_history(thread_id: str):
     try:
         checkpoints = [c async for c in db.checkpointer.alist(config={"configurable": {"thread_id": thread_id}})]
-        print(checkpoints)
         if not checkpoints:
             return {"success": False, "message": "*Conversation history is empty❕*"}
 
