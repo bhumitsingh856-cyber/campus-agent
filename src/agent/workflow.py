@@ -14,7 +14,6 @@ import src.db.checkpointer as db
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.store.base import BaseStore
-import asyncio
 
 class GlobalState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]

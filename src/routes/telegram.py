@@ -6,7 +6,6 @@ from telegram.constants import ChatAction
 from langchain_core.messages import HumanMessage
 import src.agent.workflow as workflow
 from src.utils.command_handler import process_command
-from src.utils.start_message import start_message
 import os
 
 TOKEN = os.getenv("TELEGRAM_ACCESS_TOKEN")

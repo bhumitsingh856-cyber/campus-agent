@@ -25,13 +25,25 @@ def store(namespace: str):
     )
 
 
+def get_all_namespaces():
+    try:
+        stats = index.describe_index_stats()
+        namespaces_dict = stats.get("namespaces")
+        pdf = []
+        for i in namespaces_dict:
+            pdf.append({'name':i,'chunks':namespaces_dict[i]['vector_count']})
+        return pdf
+    except Exception as e:
+        return "Error while getting namespaces"
+
+
 def chunking(pdf, chunk_size):
     try:
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size, chunk_overlap=300
         )
         loader = PyPDFLoader(pdf)
-        doc =loader.load()
+        doc = loader.load()
         texts = splitter.split_documents(doc)
         docs = [
             Document(
@@ -57,14 +69,14 @@ def upsert(namespace, pdf, chunk_size=1500):
     except Exception as e:
         return "Error while uploading vector to vector store"
 
+
 async def retriever(query: str, namespace: str):
     try:
         vector_store = store(namespace)
-        res =await vector_store.as_retriever(search_kwargs={"k": 5}).ainvoke(query)
-        docs=[]
+        res = await vector_store.as_retriever(search_kwargs={"k": 5}).ainvoke(query)
+        docs = []
         for i in res:
             docs.append(i.page_content)
         return docs
     except Exception as e:
         return "Error while retrieving vectors from vector store"
-
